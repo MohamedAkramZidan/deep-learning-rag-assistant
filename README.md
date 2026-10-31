@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Deep Learning RAG System
 
 A cloud-based **Retrieval-Augmented Generation (RAG)** system for answering questions about Deep Learning using a curated collection of educational notes. Built with **Qdrant Cloud** for vector storage, **Hybrid Search (Dense + Sparse)** for information retrieval, **Reciprocal Rank Fusion (RRF)** and **Cross-Encoder Reranking** to improve retrieval relevance, and **Google Gemini Flash 3.8** to generate context-aware answers. The system exposes its question-answering functionality through a **FastAPI REST API**.
