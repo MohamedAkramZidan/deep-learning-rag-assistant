@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Deep Learning RAG System
 
 A cloud-based **Retrieval-Augmented Generation (RAG)** system for answering questions about Deep Learning using a curated collection of educational notes. Built with **Qdrant Cloud** for vector storage, **Hybrid Search (Dense + Sparse)** for information retrieval, **Reciprocal Rank Fusion (RRF)** and **Cross-Encoder Reranking** to improve retrieval relevance, and **Google Gemini Flash 3.8** to generate context-aware answers. The system exposes its question-answering functionality through a **FastAPI REST API**.
@@ -82,7 +81,6 @@ The system implements a multi-stage RAG pipeline to answer questions about Deep 
 | Reranking | Sentence Transformers Cross-Encoder |
 | Reranker Model | `cross-encoder/ms-marco-MiniLM-L-6-v2` |
 | LLM | Google Gemini Flash 3.8 |
-
 
 ## Chunking Strategies
 
@@ -176,7 +174,3 @@ http://127.0.0.1:8000/docs
 
 
 *Built to explore practical RAG architectures, hybrid information retrieval, reranking, vector databases, and LLM integration.*
-=======
-# deep-learning-rag-assistant
-A Retrieval-Augmented Generation (RAG) system for searching and answering questions from Deep Learning notes using Qdrant, hybrid search (Dense + BM25), Sentence Transformers, and Google Gemini.
->>>>>>> 7f3aa465feaa63bd4cafa70b9b1d739b9b21b866
