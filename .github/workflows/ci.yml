@@ -25,5 +25,10 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked
 
-      - name: Run tests
+      - name: Run Tests
+        env:
+          QDRANT_URL: ${{ secrets.QDRANT_URL }}
+          QDRANT_API_KEY: ${{ secrets.QDRANT_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
         run: uv run pytest
