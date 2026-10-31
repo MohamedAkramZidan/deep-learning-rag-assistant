@@ -95,8 +95,8 @@ The project supports three chunking approaches to explore how document segmentat
 ## Project Structure
 
 ```text
-deep-learning-rag/
-│
+deep-learning-rag-assistant/
+├── .github/
 ├── data/
 │
 ├── scripts/
