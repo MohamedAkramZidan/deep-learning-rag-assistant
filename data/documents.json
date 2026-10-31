@@ -1,0 +1,98 @@
+[
+  {
+    "title": "What Is Deep Learning?",
+    "content": "Deep learning is a subfield of machine learning that uses artificial\nneural networks with multiple layers to learn complex patterns from data.\nEach layer transforms its input into a more useful representation for\nthe next layer. Unlike traditional machine learning, deep learning can\nautomatically learn features from raw data, reducing the need for manual\nfeature engineering. It is widely used in computer vision, natural\nlanguage processing, speech recognition, and generative AI.",
+    "category": "Fundamentals",
+    "topic": "Introduction to Deep Learning",
+    "difficulty": "Beginner",
+    "tags": ["deep learning", "neural networks", "machine learning"]
+  },
+  {
+    "title": "Artificial Neural Networks",
+    "content": "An artificial neural network consists of interconnected neurons organized\ninto input, hidden, and output layers. Each neuron calculates a weighted\nsum of its inputs, adds a bias, and applies an activation function.\nDuring training, the network adjusts its weights and biases to minimize\na loss function. Neural networks can model nonlinear relationships and\nserve as the foundation for architectures such as convolutional neural\nnetworks, recurrent neural networks, and transformers.",
+    "category": "Neural Networks",
+    "topic": "ANN Architecture",
+    "difficulty": "Beginner",
+    "tags": ["ANN", "neurons", "layers", "weights", "bias"]
+  },
+  {
+    "title": "Forward Propagation",
+    "content": "Forward propagation is the process of passing input data through a neural\nnetwork to produce a prediction. At each layer, the network multiplies\nthe input by a weight matrix, adds a bias vector, and applies an\nactivation function. The final layer produces the model output, which\ncan represent a class probability or a numerical prediction. The loss\nfunction then measures the difference between this prediction and the\nactual target. Forward propagation is performed during both training\nand inference.",
+    "category": "Training",
+    "topic": "Forward Propagation",
+    "difficulty": "Beginner",
+    "tags": ["forward pass", "weights", "bias", "prediction"]
+  },
+  {
+    "title": "Backpropagation and Gradient Descent",
+    "content": "Backpropagation calculates how much each model parameter contributes\nto the prediction error by applying the chain rule of calculus.\nIt computes gradients of the loss with respect to the weights and biases.\nGradient descent then uses these gradients to update the parameters\nin a direction that reduces the loss. The learning rate controls the\nsize of each update. Backpropagation calculates gradients, while the\noptimizer uses those gradients to update model parameters. Both are\nessential parts of training neural networks.",
+    "category": "Training",
+    "topic": "Optimization",
+    "difficulty": "Intermediate",
+    "tags": ["backpropagation", "gradient descent", "gradients", "optimizer"]
+  },
+  {
+    "title": "Activation Functions",
+    "content": "Activation functions introduce nonlinear behavior into neural networks,\nallowing them to learn complex relationships. ReLU returns the input\nwhen it is positive and zero otherwise. Sigmoid maps values into the\ninterval between zero and one and is often used for binary classification\noutputs. Softmax converts a vector of logits into a probability\ndistribution across multiple classes. The choice of activation function\ndepends on the network architecture and prediction task.",
+    "category": "Neural Networks",
+    "topic": "Activation Functions",
+    "difficulty": "Beginner",
+    "tags": ["ReLU", "sigmoid", "softmax", "nonlinearity"]
+  },
+  {
+    "title": "Loss Functions in Deep Learning",
+    "content": "A loss function measures how different a model's predictions are from\nthe expected targets. Mean squared error is commonly used for regression,\nwhile binary cross-entropy is suitable for binary classification and\ncategorical cross-entropy is commonly used for multiclass classification.\nThe training process attempts to minimize the selected loss. Choosing\nan appropriate loss function depends on the task, target representation,\nand model output layer.",
+    "category": "Training",
+    "topic": "Loss Functions",
+    "difficulty": "Intermediate",
+    "tags": ["loss", "MSE", "cross-entropy", "classification", "regression"]
+  },
+  {
+    "title": "Overfitting and Regularization",
+    "content": "Overfitting occurs when a model learns patterns specific to its training\ndata, including noise, and performs poorly on unseen examples. A common\nsign is a low training loss combined with a substantially higher\nvalidation loss. Regularization techniques help reduce overfitting.\nThese include L1 and L2 penalties, dropout, data augmentation, early\nstopping, and reducing model complexity. Evaluating performance on\nseparate validation and test sets helps estimate generalization.",
+    "category": "Model Evaluation",
+    "topic": "Generalization",
+    "difficulty": "Intermediate",
+    "tags": ["overfitting", "regularization", "dropout", "generalization"]
+  },
+  {
+    "title": "Convolutional Neural Networks",
+    "content": "Convolutional neural networks are designed to process grid-like data,\nespecially images. Convolutional layers apply learnable filters to\ndetect local patterns such as edges, textures, and shapes. Pooling or\nstrided convolutions can reduce spatial dimensions, while deeper layers\nlearn increasingly complex representations. CNNs are widely used for\nimage classification, object detection, segmentation, and medical image\nanalysis. Their shared weights make them more parameter-efficient than\nfully connected networks for many image-processing tasks.",
+    "category": "Deep Learning Architectures",
+    "topic": "Computer Vision",
+    "difficulty": "Intermediate",
+    "tags": ["CNN", "convolution", "images", "computer vision"]
+  },
+  {
+    "title": "Transfer Learning and Fine-Tuning",
+    "content": "Transfer learning reuses knowledge learned by a model on one task for\nanother related task. A common approach is to start with a pretrained\nnetwork, freeze its backbone, and train a new classification head.\nFine-tuning goes further by unfreezing some or all pretrained layers\nand updating their parameters on the target dataset. Transfer learning\nis especially useful when labeled data or computational resources are\nlimited. A smaller learning rate is often used during fine-tuning to\navoid destroying useful pretrained representations.",
+    "category": "Model Training",
+    "topic": "Transfer Learning",
+    "difficulty": "Intermediate",
+    "tags": ["pretrained models", "fine-tuning", "CNN", "feature extraction"]
+  },
+  {
+    "title": "Transformers and Self-Attention",
+    "content": "Transformers process sequences using attention mechanisms rather than\nrelying primarily on recurrent connections. Self-attention allows each\ntoken to assign different importance to other tokens in the sequence.\nQuery, key, and value projections are used to calculate attention\nweights and combine information from different positions. Multi-head\nattention learns several attention patterns in parallel, while\npositional information helps the model represent token order.\nTransformers are widely used in large language models, machine\ntranslation, document understanding, and multimodal AI.",
+    "category": "Deep Learning Architectures",
+    "topic": "Transformers",
+    "difficulty": "Advanced",
+    "tags": ["transformers", "self-attention", "LLM", "NLP"]
+  },
+  {
+    "title": "Batch Normalization and Dropout",
+    "content": "Batch normalization normalizes intermediate activations using statistics\nfrom training batches and learnable parameters. It can improve training\nstability and sometimes allow higher learning rates. Dropout randomly\ndisables a fraction of activations during training to reduce reliance\non particular neurons. During inference, dropout is disabled, while\nbatch normalization uses its accumulated running statistics. These\ntechniques address different issues and may be used together depending\non the architecture.",
+    "category": "Regularization",
+    "topic": "Training Techniques",
+    "difficulty": "Intermediate",
+    "tags": ["batch normalization", "dropout", "training stability"]
+  },
+  {
+    "title": "Evaluating Classification Models",
+    "content": "Classification models can be evaluated using accuracy, precision,\nrecall, F1-score, and a confusion matrix. Accuracy measures the fraction\nof predictions that are correct. Precision measures how many predicted\npositives are actually positive, while recall measures how many actual\npositives are detected. The F1-score is the harmonic mean of precision\nand recall. For imbalanced datasets, accuracy alone can be misleading,\nso precision, recall, F1-score, and per-class metrics may provide a\nmore useful assessment.",
+    "category": "Model Evaluation",
+    "topic": "Classification Metrics",
+    "difficulty": "Intermediate",
+    "tags": ["accuracy", "precision", "recall", "F1-score", "confusion matrix"]
+  }
+]
