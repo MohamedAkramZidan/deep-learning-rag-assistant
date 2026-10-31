@@ -1,4 +1,3 @@
-
 import pytest
 from pydantic import ValidationError
 
@@ -15,6 +14,9 @@ def test_settings_accept_valid_values():
     assert settings.qdrant_api_key.get_secret_value() == "test-api-key"
 
 
-def test_settings_require_qdrant_credentials():
+def test_settings_require_qdrant_credentials(monkeypatch):
+    monkeypatch.delenv("QDRANT_URL", raising=False)
+    monkeypatch.delenv("QDRANT_API_KEY", raising=False)
+
     with pytest.raises(ValidationError):
         Settings(_env_file=None)
