@@ -133,7 +133,7 @@ deep-learning-rag/
 ```bash
 git clone https://github.com/MohamedAkramZidan/deep-learning-rag-assistant.git
 
-cd deep-learning-rag
+cd deep-learning-rag-assistant
 ```
 
 ### 2. Install Dependencies
