@@ -23,9 +23,12 @@ def generate_answer(
     prompt = build_rag_prompt(question, sources)
 
     response = generate_with_retry(
-        client=client or create_gemini_client(),
+        client=client,
         model=model_name or settings.gemini_model,
         prompt=prompt,
+        config={
+            "temperature": 0.1,
+        },
     )
 
     answer = response.text
