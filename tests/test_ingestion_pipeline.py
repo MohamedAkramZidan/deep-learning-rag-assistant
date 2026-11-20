@@ -82,8 +82,16 @@ def test_build_points_uses_deterministic_ids():
         }
     ]
 
-    first = build_points(dataset, FakeEncoder())
-    second = build_points(dataset, FakeEncoder())
+    first = build_points(
+        dataset,
+        FakeEncoder(),
+        sparse_encoder=FakeSparseEncoder(),
+    )
+    second = build_points(
+        dataset,
+        FakeEncoder(),
+        sparse_encoder=FakeSparseEncoder(),
+    )
 
     assert [point.id for point in first] == [
         point.id for point in second
