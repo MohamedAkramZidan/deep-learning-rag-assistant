@@ -1,4 +1,6 @@
 
+from functools import lru_cache
+
 from sentence_transformers import CrossEncoder
 
 from rag_app.schemas.response import SourceDocument
@@ -8,6 +10,7 @@ RERANKER_MODEL_NAME = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 DEFAULT_CANDIDATE_LIMIT = 20
 
 
+@lru_cache(maxsize=1)
 def load_reranker() -> CrossEncoder:
     return CrossEncoder(RERANKER_MODEL_NAME)
 

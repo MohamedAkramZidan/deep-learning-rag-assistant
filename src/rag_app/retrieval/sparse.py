@@ -1,4 +1,6 @@
 
+from functools import lru_cache
+
 from fastembed import SparseTextEmbedding
 from qdrant_client import QdrantClient, models
 
@@ -13,6 +15,7 @@ DEFAULT_TOP_K = 5
 MAX_TOP_K = 20
 
 
+@lru_cache(maxsize=1)
 def load_sparse_encoder() -> SparseTextEmbedding:
     return SparseTextEmbedding(model_name=SPARSE_MODEL_NAME)
 
