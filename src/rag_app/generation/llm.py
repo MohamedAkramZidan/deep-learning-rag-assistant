@@ -3,6 +3,7 @@ from rag_app.core.config import settings
 from rag_app.generation.client import create_gemini_client
 from rag_app.generation.prompts import build_rag_prompt
 from rag_app.schemas.response import SourceDocument
+from rag_app.generation.retry import generate_with_retry
 
 
 def generate_answer(
@@ -21,9 +22,10 @@ def generate_answer(
 
     prompt = build_rag_prompt(question, sources)
 
-    response = client.models.generate_content(
+    response = generate_with_retry(
+        client=client or create_gemini_client(),
         model=model_name or settings.gemini_model,
-        contents=prompt,
+        prompt=prompt,
     )
 
     answer = response.text
