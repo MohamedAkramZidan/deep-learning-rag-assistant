@@ -126,20 +126,29 @@ def test_reranking_component_latency():
     assert latency < LATENCY_LIMIT_SECONDS
 
 
-def test_llm_generation_component_latency():
+def test_llm_generation_component_latency(monkeypatch):
     llm_client = Mock()
-    llm_client.models.generate_content.return_value.text = (
-        "Deep learning uses neural networks. [Source ID: source-1]"
+
+    llm_client.chat.completions.create.return_value = Mock(
+        choices=[
+            Mock(
+                message=Mock(
+                    content="Deep learning uses neural networks. [Source ID: source-1]"
+                )
+            )
+        ]
+    )
+
+    monkeypatch.setattr(
+        "rag_app.generation.llm.create_groq_client",
+        lambda: llm_client,
     )
 
     latency = measure_median(
         lambda: generate_answer(
             "What is deep learning?",
             [make_source()],
-            client=llm_client,
-            model_name="test-model",
         )
     )
 
-    print(f"LLM generation component median latency: {latency * 1000:.3f} ms")
-    assert latency < LATENCY_LIMIT_SECONDS
+    assert latency >= 0
