@@ -1,9 +1,8 @@
-
 from rag_app.core.config import settings
 from rag_app.generation.client import create_gemini_client
 from rag_app.generation.prompts import build_rag_prompt
-from rag_app.schemas.response import SourceDocument
 from rag_app.generation.retry import generate_with_retry
+from rag_app.schemas.response import SourceDocument
 
 
 def generate_answer(
@@ -12,13 +11,11 @@ def generate_answer(
     client=None,
     model_name: str | None = None,
 ) -> str:
-    """Generate a grounded answer using Gemini."""
 
-    if not question.strip():
+    if not question or not question.strip():
         raise ValueError("Question cannot be empty or whitespace.")
 
-    if client is None:
-        client = create_gemini_client()
+    client = client or create_gemini_client()
 
     prompt = build_rag_prompt(question, sources)
 
@@ -28,6 +25,7 @@ def generate_answer(
         prompt=prompt,
         config={
             "temperature": 0.1,
+            "max_output_tokens": 1024,
         },
     )
 
