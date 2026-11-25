@@ -5,7 +5,7 @@ from typing import Any
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_DATASET_PATH = PROJECT_ROOT / "data" / "documents.json"
+DEFAULT_DATASET_PATH = PROJECT_ROOT / "data" / "cleaned_document.json"
 
 
 def load_documents(
@@ -29,7 +29,7 @@ def load_documents(
         if not isinstance(document, dict):
             raise ValueError(f"Document {index} must be a JSON object.")
 
-        for field in ("title", "content"):
+        for field in ("chapter_title", "text"):
             value = document.get(field)
 
             if not isinstance(value, str) or not value.strip():

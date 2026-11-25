@@ -1,3 +1,5 @@
+
+import json
 from pathlib import Path
 from uuid import NAMESPACE_URL, uuid5
 
@@ -8,10 +10,6 @@ from rag_app.ingestion.chunking import (
     fixed_size_chunks,
     paragraph_chunks,
     sentence_chunks,
-)
-from rag_app.ingestion.loaders import (
-    DEFAULT_DATASET_PATH,
-    load_documents,
 )
 from rag_app.retrieval.embeddings import load_dense_encoder
 from rag_app.retrieval.sparse import (
@@ -24,6 +22,8 @@ from rag_app.retrieval.vector_store import create_qdrant_client
 logger = get_logger(__name__)
 
 COLLECTION_NAME = "deep_learning_documents"
+DEFAULT_DATASET_PATH = Path("data/cleaned_document.json")
+
 BATCH_SIZE = 16
 VECTOR_SIZE = 384
 
@@ -34,11 +34,36 @@ STRATEGIES = {
 }
 
 
+def load_documents(
+    dataset_path: str | Path = DEFAULT_DATASET_PATH,
+) -> dict:
+    with Path(dataset_path).open("r", encoding="utf-8") as file:
+        data = json.load(file)
+
+    if not isinstance(data, dict) or not isinstance(
+        data.get("pages"), list
+    ):
+        raise ValueError("Invalid dataset: expected a pages list.")
+
+    pages = [
+        page
+        for page in data["pages"]
+        if isinstance(page, dict)
+        and isinstance(page.get("text"), str)
+        and page["text"].strip()
+    ]
+
+    data["pages"] = pages
+
+    logger.info("Loaded %d pages", len(pages))
+
+    return data
+
+
 def ensure_collection(
     client: QdrantClient,
     collection_name: str = COLLECTION_NAME,
 ) -> None:
-    """Create the collection or add a missing sparse vector."""
 
     if not client.collection_exists(collection_name):
         client.create_collection(
@@ -56,10 +81,12 @@ def ensure_collection(
                 )
             },
         )
+
         logger.info("Created collection: %s", collection_name)
 
     else:
         collection_info = client.get_collection(collection_name)
+
         sparse_vectors = (
             collection_info.config.params.sparse_vectors or {}
         )
@@ -74,57 +101,62 @@ def ensure_collection(
                     ),
                 ),
             )
-            logger.info(
-                "Added sparse vector '%s' to '%s'",
-                SPARSE_VECTOR_NAME,
-                collection_name,
-            )
-        else:
-            logger.info(
-                "Sparse vector '%s' already exists in '%s'",
-                SPARSE_VECTOR_NAME,
-                collection_name,
-            )
+
+            logger.info("Added sparse vector: %s", SPARSE_VECTOR_NAME)
 
     for field in (
+        "document_id",
+        "filename",
+        "title",
+        "author",
+        "page_number",
+        "chapter",
+        "chapter_title",
         "chunk_strategy",
-        "category",
-        "topic",
-        "difficulty",
     ):
+        schema = (
+            models.PayloadSchemaType.INTEGER
+            if field in ("page_number", "chapter")
+            else models.PayloadSchemaType.KEYWORD
+        )
+
         client.create_payload_index(
             collection_name=collection_name,
             field_name=field,
-            field_schema=models.PayloadSchemaType.KEYWORD,
+            field_schema=schema,
             wait=True,
         )
 
 
 def build_points(
-    dataset: list[dict],
+    dataset: dict,
     encoder,
     batch_size: int = BATCH_SIZE,
     sparse_encoder=None,
 ) -> list[models.PointStruct]:
+
     if sparse_encoder is None:
         sparse_encoder = load_sparse_encoder()
 
+    document_id = dataset.get("document_id", "unknown")
+    filename = dataset.get("filename")
+    metadata = dataset.get("metadata", {})
+
     points = []
 
-    for document in dataset:
+    for page in dataset["pages"]:
+
+        page_number = page.get("page_number")
+
         for strategy_name, chunker in STRATEGIES.items():
-            chunks = chunker(document["content"])
+
+            chunks = chunker(page["text"])
 
             if not chunks:
                 continue
 
-            texts = [
-                f"Title: {document['title']}\nContent: {chunk}"
-                for chunk in chunks
-            ]
-
             dense_vectors = encoder.encode(
-                texts,
+                chunks,
                 batch_size=batch_size,
                 normalize_embeddings=True,
                 show_progress_bar=False,
@@ -132,7 +164,7 @@ def build_points(
 
             sparse_vectors = list(
                 sparse_encoder.embed(
-                    texts,
+                    chunks,
                     batch_size=batch_size,
                 )
             )
@@ -157,12 +189,27 @@ def build_points(
                     strict=True,
                 )
             ):
+
                 point_id = str(
                     uuid5(
                         NAMESPACE_URL,
-                        f"{document['title']}::{strategy_name}::{chunk_index}",
+                        f"{document_id}::{page_number}::"
+                        f"{strategy_name}::{chunk_index}",
                     )
                 )
+
+                payload = {
+                    "document_id": document_id,
+                    "filename": filename,
+                    "title": metadata.get("title"),
+                    "author": metadata.get("author"),
+                    "page_number": page_number,
+                    "chapter": page.get("chapter"),
+                    "chapter_title": page.get("chapter_title"),
+                    "chunk": chunk,
+                    "chunk_strategy": strategy_name,
+                    "chunk_index": chunk_index,
+                }
 
                 points.append(
                     models.PointStruct(
@@ -174,33 +221,40 @@ def build_points(
                                 values=sparse.values.tolist(),
                             ),
                         },
-                        payload={
-                            **document,
-                            "chunk": chunk,
-                            "chunk_strategy": strategy_name,
-                            "chunk_index": chunk_index,
-                        },
+                        payload=payload,
                     )
                 )
 
     logger.info("Built %d points", len(points))
+
     return points
+
 
 
 def remove_stale_points(
     client: QdrantClient,
     points: list[models.PointStruct],
+    document_id: str,
     collection_name: str = COLLECTION_NAME,
     batch_size: int = BATCH_SIZE,
 ) -> int:
 
     desired_ids = {str(point.id) for point in points}
+
     stale_ids = []
     offset = None
 
     while True:
         records, next_offset = client.scroll(
             collection_name=collection_name,
+            scroll_filter=models.Filter(
+                must=[
+                    models.FieldCondition(
+                        key="document_id",
+                        match=models.MatchValue(value=document_id),
+                    )
+                ]
+            ),
             limit=batch_size,
             offset=offset,
             with_payload=False,
@@ -222,7 +276,7 @@ def remove_stale_points(
         client.delete(
             collection_name=collection_name,
             points_selector=models.PointIdsList(
-                points=stale_ids[start : start + batch_size]
+                points=stale_ids[start:start + batch_size]
             ),
             wait=True,
         )
@@ -231,6 +285,7 @@ def remove_stale_points(
         logger.info("Removed %d stale points", len(stale_ids))
 
     return len(stale_ids)
+
 
 
 def run_ingestion(
@@ -264,8 +319,9 @@ def run_ingestion(
         logger.warning(
             "No chunks generated; existing points were preserved."
         )
+
         return {
-            "documents": len(dataset),
+            "pages": len(dataset["pages"]),
             "points_uploaded": 0,
             "stale_points_removed": 0,
         }
@@ -279,20 +335,21 @@ def run_ingestion(
     stale_count = remove_stale_points(
         client=qdrant,
         points=points,
+        document_id=dataset["document_id"],
         collection_name=collection_name,
         batch_size=batch_size,
     )
 
     logger.info(
-        "Ingestion complete: %d documents, %d points uploaded, "
+        "Ingestion complete: %d pages, %d points uploaded, "
         "%d stale points removed",
-        len(dataset),
+        len(dataset["pages"]),
         len(points),
         stale_count,
     )
 
     return {
-        "documents": len(dataset),
+        "pages": len(dataset["pages"]),
         "points_uploaded": len(points),
         "stale_points_removed": stale_count,
     }
