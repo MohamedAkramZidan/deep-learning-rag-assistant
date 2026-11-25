@@ -1,40 +1,40 @@
-
 import json
 from pathlib import Path
-from typing import Any
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_DATASET_PATH = PROJECT_ROOT / "data" / "documents.json"
+def load_documents(file_path: str | Path) -> dict:
+    file_path = Path(file_path)
 
+    if not file_path.exists():
+        raise FileNotFoundError(file_path)
 
-def load_documents(
-    file_path: str | Path = DEFAULT_DATASET_PATH,
-) -> list[dict[str, Any]]:
-    path = Path(file_path)
+    with file_path.open("r", encoding="utf-8") as file:
+        dataset = json.load(file)
 
-    if not path.is_file():
-        raise FileNotFoundError(f"Dataset file not found: {path}")
+    if not isinstance(dataset, dict):
+        raise ValueError("Dataset must be a JSON object.")
 
-    with path.open("r", encoding="utf-8") as file:
-        documents = json.load(file)
+    if not dataset.get("document_id"):
+        raise ValueError("Dataset must contain a document_id.")
 
-    if not isinstance(documents, list):
-        raise ValueError("Dataset must contain a JSON array.")
+    pages = dataset.get("pages")
 
-    if not documents:
-        raise ValueError("Dataset must contain at least one document.")
+    if not isinstance(pages, list) or not pages:
+        raise ValueError("Dataset must contain at least one page in 'pages'.")
 
-    for index, document in enumerate(documents):
-        if not isinstance(document, dict):
-            raise ValueError(f"Document {index} must be a JSON object.")
+    for index, page in enumerate(pages):
+        if not isinstance(page, dict):
+            raise ValueError(f"Page {index} must be a JSON object.")
 
-        for field in ("title", "content"):
-            value = document.get(field)
+        if not isinstance(page.get("text"), str) or not page["text"].strip():
+            raise ValueError(f"Page {index} must have non-empty content.")
 
-            if not isinstance(value, str) or not value.strip():
-                raise ValueError(
-                    f"Document {index} must have a non-empty '{field}'."
-                )
+        if (
+            not isinstance(page.get("chapter_title"), str)
+            or not page["chapter_title"].strip()
+        ):
+            raise ValueError(
+                f"Page {index} must have a non-empty 'chapter_title'."
+            )
 
-    return documents
+    return dataset

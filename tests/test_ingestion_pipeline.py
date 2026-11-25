@@ -1,18 +1,15 @@
-
+from types import SimpleNamespace
 from unittest.mock import Mock
+import json
 
 import numpy as np
 import pytest
-
-from types import SimpleNamespace
 
 from rag_app.ingestion.pipeline import (
     STRATEGIES,
     build_points,
     run_ingestion,
 )
-
-
 
 
 class FakeEncoder:
@@ -24,6 +21,7 @@ class FakeEncoder:
         show_progress_bar,
     ):
         return np.ones((len(texts), 384), dtype=np.float32)
+
 
 class FakeSparseEncoder:
     def embed(self, texts, batch_size=256, **kwargs):
@@ -39,54 +37,64 @@ class FakeSparseEncoder:
                 values=np.ones(len(indices), dtype=np.float32),
             )
 
-def test_build_points_creates_all_strategies():
-    dataset = [
-        {
-            "title": "Deep Learning",
-            "content": (
-                "Deep learning uses neural networks. "
-                "Models learn patterns from data."
-            ),
-            "category": "Fundamentals",
-            "topic": "Introduction",
-            "difficulty": "Beginner",
-            "tags": ["deep learning"],
-        }
-    ]
 
+def sample_dataset():
+    return {
+        "document_id": "deep-learning-book",
+        "filename": "deep-learning.pdf",
+        "metadata": {
+            "title": "Deep Learning",
+            "author": "Test Author",
+            "total_pages": 1,
+            "cleaned_pages": 1,
+        },
+        "pages": [
+            {
+                "page_number": 1,
+                "chapter": 1,
+                "chapter_title": "Introduction",
+                "text": (
+                    "Deep learning uses neural networks. "
+                    "Models learn patterns from data."
+                ),
+            }
+        ],
+    }
+
+
+def test_build_points_creates_all_strategies():
     points = build_points(
-        dataset,
+        sample_dataset(),
         FakeEncoder(),
         sparse_encoder=FakeSparseEncoder(),
     )
 
     assert points
+
     assert {
         point.payload["chunk_strategy"] for point in points
     } == set(STRATEGIES)
 
     for point in points:
-        print("Vector:", point.vector)
-        print("Type:", type(point.vector))
-    assert all(
-        len(next(iter(point.vector.values()))) == 384
-        for point in points
-    )
+        assert len(next(iter(point.vector.values()))) == 384
+
+        assert point.payload["document_id"] == "deep-learning-book"
+        assert point.payload["filename"] == "deep-learning.pdf"
+        assert point.payload["title"] == "Deep Learning"
+        assert point.payload["author"] == "Test Author"
+        assert point.payload["page_number"] == 1
+        assert point.payload["chapter_title"] == "Introduction"
 
 
 def test_build_points_uses_deterministic_ids():
-    dataset = [
-        {
-            "title": "Deep Learning",
-            "content": "Deep learning uses neural networks.",
-        }
-    ]
+    dataset = sample_dataset()
 
     first = build_points(
         dataset,
         FakeEncoder(),
         sparse_encoder=FakeSparseEncoder(),
     )
+
     second = build_points(
         dataset,
         FakeEncoder(),
@@ -96,6 +104,28 @@ def test_build_points_uses_deterministic_ids():
     assert [point.id for point in first] == [
         point.id for point in second
     ]
+
+
+def test_build_points_uses_document_specific_ids():
+    dataset_one = sample_dataset()
+    dataset_two = sample_dataset()
+    dataset_two["document_id"] = "another-book"
+
+    first = build_points(
+        dataset_one,
+        FakeEncoder(),
+        sparse_encoder=FakeSparseEncoder(),
+    )
+
+    second = build_points(
+        dataset_two,
+        FakeEncoder(),
+        sparse_encoder=FakeSparseEncoder(),
+    )
+
+    assert {point.id for point in first}.isdisjoint(
+        {point.id for point in second}
+    )
 
 
 def test_run_ingestion_rejects_invalid_batch_size():
@@ -110,8 +140,7 @@ def test_run_ingestion_rejects_invalid_batch_size():
 def test_run_ingestion_uploads_points(tmp_path):
     dataset_path = tmp_path / "documents.json"
     dataset_path.write_text(
-        '[{"title": "Deep Learning", '
-        '"content": "Deep learning uses neural networks."}]',
+        json.dumps(sample_dataset()),
         encoding="utf-8",
     )
 
@@ -125,6 +154,7 @@ def test_run_ingestion_uploads_points(tmp_path):
             )
         )
     )
+
     client.scroll.return_value = ([], None)
 
     result = run_ingestion(
@@ -136,12 +166,11 @@ def test_run_ingestion_uploads_points(tmp_path):
         sparse_encoder=FakeSparseEncoder(),
     )
 
-    assert result["documents"] == 1
     assert result["points_uploaded"] > 0
     assert result["stale_points_removed"] == 0
 
     client.upload_points.assert_called_once()
-    client.create_vector_name.assert_called_once()
+
     assert (
         client.upload_points.call_args.kwargs["collection_name"]
         == "test_collection"
